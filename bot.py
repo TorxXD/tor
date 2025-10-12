@@ -4,45 +4,44 @@ import socket
 import time
 import os
 
-# ... (El resto del código de setup de token e intents permanece igual) ...
+TOKEN_FILE = "token.txt"
 
-def ping_server(ip, port, timeout=3):
-    """
-    Intenta establecer una conexión TCP con el servidor para medir la latencia.
-    NOTA: Minecraft Bedrock usa UDP (RakNet). Esto solo mide la latencia de conexión TCP.
-    """
+def get_token():
+    # ... (tu función para obtener el token) ...
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as f:
+            return f.read().strip()
+    else:
+        token = input("Introduce el token de tu bot de Discord: ").strip()
+        with open(TOKEN_FILE, "w") as f:
+            f.write(token)
+        return token
+
+# --- ESTAS LÍNEAS DEBEN IR PRIMERO PARA DEFINIR 'bot' ---
+# 1. Definir los intents y habilitar message_content
+intents = discord.Intents.default()
+intents.message_content = True 
+
+# 2. DEFINIR 'bot' ANTES DE USARLO EN EL DECORADOR
+bot = commands.Bot(command_prefix=".", intents=intents)
+# --------------------------------------------------------
+
+
+def ping_server(ip, port, timeout=2):
+    # ... (tu función ping_server) ...
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(timeout) # Aumentar el timeout por si el servidor tarda en responder
+    s.settimeout(timeout)
     start_time = time.time()
-    
     try:
-        # 1. Intenta la conexión
         s.connect((ip, int(port)))
-        
-        # 2. Envía un byte de datos para forzar la respuesta de latencia
-        # Aunque es TCP, ayuda a obtener una mejor medida que solo 'connect'
-        s.sendall(b'\x01') 
-        
-        # 3. Espera a recibir una respuesta mínima (puede ser vacío, solo nos interesa el tiempo)
-        s.recv(1) 
-        
         end_time = time.time()
-        s.close()
-        
-        # Calcula el tiempo en milisegundos
         ms = int((end_time - start_time) * 1000)
+        s.close()
         return ms
-        
-    except ConnectionRefusedError:
-        # El servidor rechazó explícitamente la conexión
-        return -1 # Usaremos -1 para indicar rechazo (Server Offline)
-    except socket.timeout:
-        # La conexión excedió el tiempo de espera
-        return 0 # Usaremos 0 para indicar timeout (Server Lag/Slow)
     except Exception:
-        # Cualquier otro error (ej. IP/puerto inválido, etc.)
         return None
 
+# El decorador @bot.command() ahora funciona porque 'bot' ya está definido.
 @bot.command()
 async def ping(ctx, *, arg):
     arg = arg.replace(":", " ")
@@ -54,20 +53,17 @@ async def ping(ctx, *, arg):
     ip, port = args
     ms = ping_server(ip, port)
     embed = discord.Embed(title="Ping Result", color=0x3498db)
-    
-    # Manejo de los nuevos códigos de error
     if ms is None:
-        embed.description = f"Servidor `{ip}:{port}`: **Error Desconocido**"
-    elif ms == -1:
-        embed.description = f"Servidor `{ip}:{port}`: **Servidor Rechazó Conexión** (Offline o puerto equivocado)"
-    elif ms == 0:
-        embed.description = f"Servidor `{ip}:{port}`: **Timeout** (Ping excesivamente alto o bloqueado)"
+        embed.description = f"Servidor `{ip}:{port}`: **Server Down**"
     elif ms > 600:
         embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\nServer con muy alto ping"
     elif ms > 200:
         embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\nServer lento"
     else:
         embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\nPing Normal"
-        
     embed.set_footer(text="Ping")
     await ctx.send(embed=embed)
+
+if __name__ == "__main__":
+    token = get_token()
+    bot.run(token)
