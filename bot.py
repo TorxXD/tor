@@ -50,7 +50,7 @@ async def ping(ctx, *, arg):
     elif ms > 200:
         embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\n⚠️ Server lento"
     else:
-        embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**"
+        embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\n Ping Normal"
     embed.set_footer(text="Ping")
     await ctx.send(embed=embed)
 
