@@ -16,7 +16,16 @@ def get_token():
             f.write(token)
         return token
 
+# --- CAMBIO CLAVE AQUÍ ---
+# Habilitar intents necesarios:
+# - default(): Incluye intents como guilds, members (sin privilegio), etc.
+# - message_content = True: Esencial para que el bot pueda leer el contenido de los mensajes
+#   y procesar comandos que no sean de barra (/) o interacciones.
 intents = discord.Intents.default()
+intents.message_content = True 
+# Es importante habilitar este intent en el portal de desarrolladores de Discord también.
+# --- FIN DEL CAMBIO CLAVE ---
+
 bot = commands.Bot(command_prefix=".", intents=intents)
 
 def ping_server(ip, port, timeout=2):
@@ -50,7 +59,7 @@ async def ping(ctx, *, arg):
     elif ms > 200:
         embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\n⚠️ Server lento"
     else:
-        embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\n Ping Normal"
+        embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\nPing Normal"
     embed.set_footer(text="Ping")
     await ctx.send(embed=embed)
 
