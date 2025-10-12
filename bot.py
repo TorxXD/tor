@@ -1,58 +1,78 @@
 import discord
 from discord.ext import commands
-# Otras librerías necesarias
 import os
 import time
-import socket
+import socket # Se mantiene para la estructura, aunque no se usa para el ping de MCBE
+from mcstatus.server import BedrockServer # Librería para ping Bedrock (UDP)
 
-# Librería externa requerida para Bedrock
-from mcstatus.server import BedrockServer
-
+# --- CONFIGURACIÓN Y FUNCIONES AUXILIARES ---
 TOKEN_FILE = "token.txt"
 
-# ... (Resto de tu código de setup de token e intents) ...
-intents = discord.Intents.default()
-intents.message_content = True 
-bot = commands.Bot(command_prefix=".", intents=intents)
-
+def get_token():
+    """Obtiene el token del archivo o lo solicita al usuario."""
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as f:
+            return f.read().strip()
+    else:
+        token = input("Introduce el token de tu bot de Discord: ").strip()
+        with open(TOKEN_FILE, "w") as f:
+            f.write(token)
+        return token
 
 async def ping_bedrock_server(ip, port, timeout=5):
     """
-    Realiza un ping nativo a un servidor de Minecraft Bedrock (UDP).
+    Realiza un ping nativo a un servidor de Minecraft Bedrock (UDP) usando mcstatus.
     Devuelve la latencia en ms o None si falla.
     """
     try:
         # Crea la instancia del servidor Bedrock
         server = BedrockServer(ip, int(port))
         
-        # Llama a async_status (debe ser awaitable)
+        # Consulta el estado de forma asíncrona
         status = await server.async_status(timeout=timeout)
         
-        # El ping (latencia) ya está en el objeto de estado
+        # La latencia ya viene en el objeto status
         ms = int(status.latency)
         return ms
         
     except Exception as e:
-        # Cualquier error (timeout, servidor inaccesible, etc.) devuelve None
+        # Error al hacer ping (timeout, servidor inaccesible, etc.)
         print(f"Error al hacer ping a {ip}:{port}: {e}")
         return None
 
-# Y ahora actualizamos tu comando para que sea 'await'
+# --- CONFIGURACIÓN DEL BOT ---
+
+# 1. Habilitar intents, incluyendo message_content para leer comandos
+intents = discord.Intents.default()
+intents.message_content = True 
+
+# 2. DEFINICIÓN DEL OBJETO BOT (debe ir antes del decorador @bot.command())
+bot = commands.Bot(command_prefix=".", intents=intents)
+
+# --- COMANDOS DEL BOT ---
+
 @bot.command()
 async def ping(ctx, *, arg):
+    """
+    Comando para hacer ping a un servidor de Minecraft Bedrock.
+    Uso: .ping ip:port (El puerto por defecto de Bedrock es 19132)
+    """
     arg = arg.replace(":", " ")
     args = arg.split()
+    
     if len(args) != 2:
-        # Usa el puerto por defecto de Bedrock si no se especifica
-        await ctx.send("`.ping ip:port` o `.ping ip port`")
+        await ctx.send("`.ping ip:port` o `.ping ip port`)")
         return
 
     ip, port_str = args
-    port = int(port_str)
-    
-    # --- CAMBIO CLAVE: Usar la función asíncrona ---
+    try:
+        port = int(port_str)
+    except ValueError:
+        await ctx.send("El puerto debe ser un número válido.")
+        return
+
+    # Usar la función asíncrona de ping de Bedrock
     ms = await ping_bedrock_server(ip, port)
-    # ------------------------------------------------
     
     embed = discord.Embed(title="Ping Result (Minecraft Bedrock)", color=0x3498db)
     
@@ -65,9 +85,11 @@ async def ping(ctx, *, arg):
     else:
         embed.description = f"Servidor `{ip}:{port}`: **{ms} ms**\nPing Normal"
         
-    embed.set_footer(text="Ping Bedrock (UDP)")
+    embed.set_footer(text="Ping (UDP)")
     await ctx.send(embed=embed)
 
+# --- EJECUCIÓN DEL SCRIPT ---
+
 if __name__ == "__main__":
-    token = get_token()
+    token = get_token() # get_token() está definida antes
     bot.run(token)
