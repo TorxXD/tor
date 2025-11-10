@@ -31,7 +31,7 @@ def get_token():
 async def check_bedrock_status_http(ip: str, port: int, timeout: int = 10):
     """
     Consulta el estado de un servidor de Minecraft Bedrock usando un servicio de consulta HTTP.
-    Devuelve un diccionario con los datos o None si falla.
+    Devuelve un diccionario con los datos o None si falla
     """
     api_url = f"https://api.mcstatus.io/v2/status/bedrock/{ip}:{port}"
     try:
