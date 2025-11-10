@@ -63,8 +63,7 @@ bot = commands.Bot(command_prefix=".", intents=intents)
 @bot.command()
 async def ping(ctx, *, arg):
     """
-    Comando para consultar el estado de un servidor de Minecraft Bedrock (usando HTTP).
-    Uso: .ping ip:port (Puerto por defecto: 19132)
+    .ping ip:port
     """
     arg = arg.replace(":", " ")
     args = arg.split()
@@ -111,7 +110,7 @@ async def ping(ctx, *, arg):
             ping_status = "N/A"
 
         embed.description = f"✅ Servidor `{ip}:{port}`: **Online**"
-        embed.add_field(name="🌐 Latencia (Ping)", value=ping_status, inline=True)
+        embed.add_field(name="🌐 Ping", value=ping_status, inline=True)
         embed.add_field(name="👥 Jugadores", value=f"{players_online}/{players_max}", inline=True)
         embed.add_field(name="💬 MOTD", value=f"```\n{motd}\n```", inline=False)
         embed.add_field(name="⚙️ Versión", value=version, inline=True)
