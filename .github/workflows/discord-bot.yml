@@ -1,0 +1,35 @@
+name: Ping Discord Bot
+
+# Ejecutar manualmente o en push a main (ajusta según prefieras)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-bot:
+    # Nota: runners de GitHub Actions tienen un límite de tiempo (6 horas por job).
+    timeout-minutes: 360
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: |
+          # Ejecuta el bot en primer plano; el job durará hasta que el proceso termine o se agote el timeout.
+          python -u bot.py
